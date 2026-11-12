@@ -17,6 +17,7 @@ import { AsyncResult } from "effect/reactivity";
 
 import { DraftId, useComposerDraftStore } from "../composerDraftStore";
 import { connectionAtomRuntime } from "../connection/runtime";
+import { appAtomRegistry } from "../rpc/atomRegistry";
 import { environmentAtomList, environmentIdsKey } from "../state/environmentAtomList";
 import { useConnectedEnvironmentIds } from "../state/environments";
 import { buildThreadRouteParams } from "../threadRoutes";
@@ -65,6 +66,12 @@ export function useSpaces(): ReadonlyArray<EnvironmentSpace> {
     const list = result ? Option.getOrUndefined(AsyncResult.value(result)) : undefined;
     return (list?.spaces ?? []).map((space) => ({ environmentId, space }));
   });
+}
+
+/** For menus built outside React; the sidebar keeps these subscriptions open. */
+export function readEnvironmentSpaces(environmentId: EnvironmentId): ReadonlyArray<Space> {
+  const result = appAtomRegistry.get(spacesLive({ environmentId, input: {} }));
+  return Option.getOrUndefined(AsyncResult.value(result))?.spaces ?? [];
 }
 
 export function findSpaceOfThread(
