@@ -14,6 +14,7 @@ import {
   AuthSourceControlWriteScope,
   AuthTerminalReadScope,
   AuthTerminalOperateScope,
+  SPACES_WS_METHODS,
   WS_METHODS,
   WsRpcGroup,
 } from "@t3tools/contracts";
@@ -133,6 +134,43 @@ describe("RPC scope middleware", () => {
       ).toMatchObject({
         _tag: "EnvironmentAuthorizationError",
         requiredPermission: missing,
+      });
+      expect(handled).toEqual([]);
+    }).pipe(Effect.scoped),
+  );
+
+  it.effect("covers the fork's space methods, merged into the group before the middleware", () =>
+    Effect.gen(function* () {
+      const spacesGroup = WsRpcGroup.omit(
+        ...[...WsRpcGroup.requests.keys()].filter(
+          (
+            tag,
+          ): tag is Exclude<keyof typeof RPC_REQUIRED_SCOPES, typeof SPACES_WS_METHODS.setThread> =>
+            tag !== SPACES_WS_METHODS.setThread,
+        ),
+      );
+      const handled: Array<string> = [];
+      const client = yield* RpcTest.makeClient(spacesGroup).pipe(
+        Effect.provide(
+          Layer.mergeAll(
+            spacesGroup.toLayerHandler(SPACES_WS_METHODS.setThread, () =>
+              Effect.sync(() => {
+                handled.push("setThread");
+              }),
+            ),
+            RpcAuthorization.layer([AuthOrchestrationReadScope]),
+          ),
+        ),
+      );
+
+      expect(
+        yield* client[SPACES_WS_METHODS.setThread]({
+          threadId: ThreadId.make("thread-1"),
+          spaceId: null,
+        }).pipe(Effect.flip),
+      ).toMatchObject({
+        _tag: "EnvironmentAuthorizationError",
+        requiredPermission: AuthOrchestrationOperateScope,
       });
       expect(handled).toEqual([]);
     }).pipe(Effect.scoped),
