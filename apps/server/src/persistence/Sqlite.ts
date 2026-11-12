@@ -7,6 +7,7 @@ import * as SqlClient from "effect/sql/SqlClient";
 import * as NodeSqliteClient from "@t3tools/shared/nodeSqliteClient";
 
 import { hasPendingMigrations, runMigrations } from "./Migrations.ts";
+import { runSpacesMigrations } from "../spaces/SpacesMigrations.ts";
 import { initializeV2Database } from "./initializeV2Database.ts";
 import * as ServerConfig from "../config.ts";
 import * as ServerOwnership from "../serverOwnership.ts";
@@ -70,7 +71,7 @@ const makeLayerSetup = <E, R>(migrate: Effect.Effect<unknown, E, R>) =>
     }).pipe(Effect.withSpan("Sqlite.setup")),
   );
 
-const layerSetup = makeLayerSetup(runMigrations());
+const layerSetup = makeLayerSetup(runMigrations().pipe(Effect.andThen(runSpacesMigrations())));
 
 const makeLayerFromPath = <E, R>(setup: Layer.Layer<never, E, R>) =>
   Effect.fn("makeSqlitePersistenceLive")(function* (dbPath: string) {
