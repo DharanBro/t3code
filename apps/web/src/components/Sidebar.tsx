@@ -263,6 +263,13 @@ import {
   type SidebarSweepAction,
 } from "./sidebar/SidebarThreadRow";
 import { SidebarDraftBlock } from "./sidebar/SidebarDraftBlock";
+import { SpacesSidebarBlock } from "../spaces/SpacesSidebarBlock";
+import { useWithSpaceThreads } from "../spaces/spacesState";
+import {
+  isSpaceThreadMenuId,
+  runSpaceThreadMenuAction,
+  showThreadMenuWithSpaces,
+} from "../spaces/spaceThreadMenu";
 import {
   SidebarProjectFolderHeader,
   sidebarFolderRowId,
@@ -908,7 +915,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
     projectGroupByScopeKey,
     projectScopeItems: lookupProjectScopeItems,
   } = useSidebarLookups();
-  const delegatedUnderParent = useDelegatedUnderParent();
+  const delegatedUnderParent = useWithSpaceThreads(useDelegatedUnderParent());
   const router = useRouter();
   const { isMobile, setOpenMobile } = useSidebar();
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
@@ -2628,7 +2635,9 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
             ),
           ) ?? null;
         const clicked = await settlePromise(() =>
-          api.contextMenu.show(
+          showThreadMenuWithSpaces(
+            api,
+            threadRef,
             buildThreadActionMenuItems({
               canOperate: readEnvironmentScope(
                 threadRef.environmentId,
@@ -2667,6 +2676,12 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
           ),
         );
         if (clicked._tag === "Failure" || clicked.value === null) return;
+        if (isSpaceThreadMenuId(clicked.value))
+          return runSpaceThreadMenuAction(
+            clicked.value,
+            { threadRef, title: thread.title },
+            navigateToThread,
+          );
         if (threadActionRequiresOperate(clicked.value) && !checkThreadOperations([thread])) return;
         if (clicked.value?.startsWith("snooze:")) {
           const preset =
@@ -3435,6 +3450,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
                       };
                       const from = isContextDrag ? null : (dragState?.activeSection ?? null);
                       const items: ReactNode[] = [
+                        <SpacesSidebarBlock key="spaces" />,
                         <SidebarDraftBlock
                           key="draft-sessions"
                           projectByKey={projectByKey}

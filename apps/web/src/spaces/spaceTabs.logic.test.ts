@@ -1,0 +1,42 @@
+import { scopedThreadKey, scopeThreadRef } from "@t3tools/client-runtime/environment";
+import { EnvironmentId, ThreadId } from "@t3tools/contracts";
+import { describe, expect, it } from "vite-plus/test";
+
+import { pickSpaceTabToOpen, resolveSpaceTabs } from "./spaceTabs.logic";
+
+const environmentId = EnvironmentId.make("env-1");
+const thread = (id: string, lastVisitedAt?: string) => ({ id, lastVisitedAt });
+const byKey = (...threads: ReadonlyArray<ReturnType<typeof thread>>) =>
+  new Map(
+    threads.map((entry) => [
+      scopedThreadKey(scopeThreadRef(environmentId, ThreadId.make(entry.id))),
+      entry,
+    ]),
+  );
+
+describe("space tabs", () => {
+  it("keeps tab order and drops ids with no loaded thread, such as deleted threads", () => {
+    const tabs = resolveSpaceTabs(
+      environmentId,
+      ["t3", "gone", "t1"].map((id) => ThreadId.make(id)),
+      byKey(thread("t1"), thread("t3")),
+    );
+    expect(tabs.map((tab) => tab.id)).toEqual(["t3", "t1"]);
+  });
+
+  it("opens the tab visited last, or the first tab when none was visited", () => {
+    const visitedAt = (tab: ReturnType<typeof thread>) => tab.lastVisitedAt;
+    expect(
+      pickSpaceTabToOpen(
+        [
+          thread("t1", "2026-11-12T09:00:00.000Z"),
+          thread("t2"),
+          thread("t3", "2026-11-12T10:00:00.000Z"),
+        ],
+        visitedAt,
+      )?.id,
+    ).toBe("t3");
+    expect(pickSpaceTabToOpen([thread("t1"), thread("t2")], visitedAt)?.id).toBe("t1");
+    expect(pickSpaceTabToOpen([], visitedAt)).toBeNull();
+  });
+});
