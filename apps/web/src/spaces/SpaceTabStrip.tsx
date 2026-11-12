@@ -123,7 +123,7 @@ export const SpaceTabStrip = memo(function SpaceTabStrip(props: {
       role="tablist"
       aria-label={space.name}
       data-testid="space-tab-strip"
-      className="flex shrink-0 items-end gap-0.5 overflow-x-auto border-b border-border bg-background pt-1 pr-(--workspace-gutter-end) pl-(--workspace-gutter-start)"
+      className="flex shrink-0 items-end gap-0.5 overflow-x-auto overflow-y-hidden border-b border-border bg-background pt-1 pr-(--workspace-gutter-end) pl-(--workspace-gutter-start)"
     >
       {tabs.map((tab) => {
         const isActive = tab.threadId === threadRef.threadId;
@@ -142,7 +142,7 @@ export const SpaceTabStrip = memo(function SpaceTabStrip(props: {
               void showTabMenu(tab, { x: event.clientX, y: event.clientY });
             }}
             className={cn(
-              "-mb-px flex h-8 max-w-56 min-w-0 shrink-0 cursor-pointer items-center gap-1.5 rounded-t-md border border-b-0 px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+              "flex h-8 max-w-56 min-w-0 shrink-0 cursor-pointer items-center gap-1.5 rounded-t-md border border-b-0 px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
               isActive
                 ? "border-border bg-background text-foreground"
                 : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
