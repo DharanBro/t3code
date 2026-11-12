@@ -287,6 +287,7 @@ import { ProviderSubagentBar } from "./chat/ProviderSubagentBar";
 import { getTriggerDisplayModelName } from "./chat/providerIconUtils";
 import { resolveScrollToEndClearance } from "./composerFooterLayout";
 import { ChatHeader } from "./chat/ChatHeader";
+import { SpaceTabStrip } from "../spaces/SpaceTabStrip";
 import { useSideChat } from "./chat/useSideChat";
 import { useRemoteOpenState } from "~/remoteOpen";
 import { shouldShowOpenInPicker } from "./chat/OpenInPicker.logic";
@@ -3352,6 +3353,7 @@ export default function ChatView(props: ChatViewProps) {
             />
           </header>
         )}
+        {embedded ? null : <SpaceTabStrip threadRef={activeThreadRef} isDraft={!isServerThread} />}
 
         <div className="relative flex min-h-0 min-w-0 flex-1">
           <ThreadFindCanvas

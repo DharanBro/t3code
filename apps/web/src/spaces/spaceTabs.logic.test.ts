@@ -2,6 +2,7 @@ import { scopedThreadKey, scopeThreadRef } from "@t3tools/client-runtime/environ
 import { EnvironmentId, ThreadId } from "@t3tools/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
+import { DraftId } from "../composerDraftStore";
 import { pickSpaceTabToOpen, resolveSpaceTabs } from "./spaceTabs.logic";
 
 const environmentId = EnvironmentId.make("env-1");
@@ -15,13 +16,23 @@ const byKey = (...threads: ReadonlyArray<ReturnType<typeof thread>>) =>
   );
 
 describe("space tabs", () => {
-  it("keeps tab order and drops ids with no loaded thread, such as deleted threads", () => {
+  it("keeps tab order, shows unsent drafts, and drops ids with neither, such as deleted threads", () => {
     const tabs = resolveSpaceTabs(
       environmentId,
-      ["t3", "gone", "t1"].map((id) => ThreadId.make(id)),
+      ["t3", "gone", "draft", "t1"].map((id) => ThreadId.make(id)),
       byKey(thread("t1"), thread("t3")),
+      new Map([
+        [
+          scopedThreadKey(scopeThreadRef(environmentId, ThreadId.make("draft"))),
+          DraftId.make("draft-1"),
+        ],
+      ]),
     );
-    expect(tabs.map((tab) => tab.id)).toEqual(["t3", "t1"]);
+    expect(tabs.map((tab) => [tab.threadId, tab.thread?.id ?? null, tab.draftId])).toEqual([
+      ["t3", "t3", null],
+      ["draft", null, "draft-1"],
+      ["t1", "t1", null],
+    ]);
   });
 
   it("opens the tab visited last, or the first tab when none was visited", () => {
